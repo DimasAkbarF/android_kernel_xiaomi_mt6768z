@@ -697,6 +697,12 @@ LDFLAGS		+= --plugin-opt=O3
 
 endif
 
+# According gcc docs when using computed gotos, disabling
+# gcse could result in better runtime performing
+ifneq ($(cc-name),clang)
+KBUILD_CFLAGS   += -fno-gcse
+endif
+
 # The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
 # values of the respective KBUILD_* variables
 ARCH_CPPFLAGS :=
@@ -716,6 +722,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, attribute-alias)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, tautological-compare)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, stringop-overread)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, array-compare)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, format)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += -Os
@@ -995,6 +1002,51 @@ KBUILD_CFLAGS += $(call cc-disable-warning, restrict)
 # Enabled with W=2, disabled by default as noisy
 KBUILD_CFLAGS += $(call cc-disable-warning, maybe-uninitialized)
 
+# disable warning -Wempty-body
+KBUILD_CFLAGS += $(call cc-disable-warning, empty-body)
+
+# disable warning -Wfortify-source
+KBUILD_CFLAGS += $(call cc-disable-warning, fortify-source)
+
+# disable warning -Wignored-attributes
+KBUILD_CFLAGS += $(call cc-disable-warning, ignored-attributes)
+
+# disable warning -Wincompatible-pointer-types
+KBUILD_CFLAGS += $(call cc-disable-warning, incompatible-pointer-types)
+
+# disable warning -Wint-conversion
+KBUILD_CFLAGS += $(call cc-disable-warning, int-conversion)
+
+# disable warning -Wmisleading-indentation
+KBUILD_CFLAGS += $(call cc-disable-warning, misleading-indentation)
+
+# disable warning -Wnon-literal-null-conversion
+KBUILD_CFLAGS += $(call cc-disable-warning, non-literal-null-conversion)
+
+# disable warning -Wparentheses-equality
+KBUILD_CFLAGS += $(call cc-disable-warning, parentheses-equality)
+
+# disable warning -Wpointer-bool-conversion
+KBUILD_CFLAGS += $(call cc-disable-warning, pointer-bool-conversion)
+
+# disable warning -Wpointer-integer-compare
+KBUILD_CFLAGS += $(call cc-disable-warning, pointer-integer-compare)
+
+# disable warning -Wpointer-to-int-cast
+KBUILD_CFLAGS += $(call cc-disable-warning, pointer-to-int-cast)
+
+# disable warning -Wunused-but-set-variable
+KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
+
+# disable warning -Wunused-function
+KBUILD_CFLAGS += $(call cc-disable-warning, unused-function)
+
+# disable warning -Wunused-variable
+KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
+
+# disable warning -Werror=enum-int-mismatch
+KBUILD_CFLAGS += $(call cc-disable-warning, enum-int-mismatch)
+
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 
@@ -1054,7 +1106,7 @@ endif
 # =============PROJECT==================================
 
 # Use --build-id when available.
-LDFLAGS_BUILD_ID := $(call ld-option, --build-id)
+LDFLAGS_BUILD_ID := $(call ld-option, --build-id=sha1)
 KBUILD_LDFLAGS_MODULE += $(LDFLAGS_BUILD_ID)
 LDFLAGS_vmlinux += $(LDFLAGS_BUILD_ID)
 
@@ -1072,6 +1124,9 @@ endif
 ifeq ($(CONFIG_RELR),y)
 LDFLAGS_vmlinux	+= --pack-dyn-relocs=relr
 endif
+
+# the checker needs the correct machine size
+CHECKFLAGS += $(if $(CONFIG_64BIT),-m64,-m32)
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
@@ -1843,6 +1898,7 @@ clean: $(clean-dirs)
 		-o -name '*.dwo'  \
 		-o -name '*.su'  \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
+		-o -name '*.lex.c' -o -name '*.tab.[ch]' \
 		-o -name '*.symtypes' -o -name 'modules.order' \
 		-o -name modules.builtin -o -name '.tmp_*.o.*' \
 		-o -name '*.c.[012]*.*' \
